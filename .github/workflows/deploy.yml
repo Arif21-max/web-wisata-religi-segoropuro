@@ -83,13 +83,17 @@ jobs:
 
       - name: Jalankan deploy hook di server
         run: |
-          RESPONSE=$(curl -fsS -m 300 "https://sayyidarifsegoropuro.com/deploy-hook.php?token=${{ secrets.DEPLOY_TOKEN }}") || {
-            echo "::error::Deploy hook gagal dipanggil (HTTP error). Cek DEPLOY_HOOK_TOKEN di .env server & log storage/logs/deploy.log."
+          HTTP=$(curl -sS -m 300 -o /tmp/hook_response.txt -w "%{http_code}" "https://sayyidarifsegoropuro.com/deploy-hook.php?token=${{ secrets.DEPLOY_TOKEN }}")
+          echo "HTTP code: $HTTP"
+          echo "Respons hook:"
+          cat /tmp/hook_response.txt
+          echo ""
+          if [ "$HTTP" != "200" ]; then
+            echo "::error::Deploy hook gagal (HTTP $HTTP). Cek error di atas & storage/logs/deploy.log di server."
             exit 1
-          }
-          echo "$RESPONSE"
-          if ! echo "$RESPONSE" | grep -q '"ok":true'; then
-            echo "::error::Deploy hook mengembalikan error: $RESPONSE"
+          fi
+          if ! grep -q '"ok":true' /tmp/hook_response.txt; then
+            echo "::error::Deploy hook mengembalikan error meski HTTP 200."
             exit 1
           fi
 
