@@ -184,28 +184,46 @@ try {
     $kernel->bootstrap();
 
     $steps = [];
+    $warnings = [];
 
+    // KRITIS: schema database. Jika gagal, deploy dianggap gagal.
     $kernel->call('migrate', ['--force' => true]);
     $steps['migrate'] = 'ok';
 
-    if (!file_exists($root . '/public/storage')) {
-        $kernel->call('storage:link');
-    }
-    $steps['storage:link'] = 'ok';
-
-    if ($app->make('db')->table('users')->count() === 0) {
-        $kernel->call('db:seed', ['--class' => 'Database\Seeders\UserSeeder', '--force' => true]);
-        $steps['seed'] = 'admin default dibuat';
-    } else {
-        $steps['seed'] = 'skip (users sudah ada)';
+    // Opsional: symlink public/storage.
+    try {
+        if (!file_exists($root . '/public/storage')) {
+            $kernel->call('storage:link');
+        }
+        $steps['storage:link'] = 'ok';
+    } catch (\Throwable $e) {
+        $warnings[] = 'storage:link: ' . $e->getMessage();
     }
 
-    $kernel->call('optimize:clear');
-    $kernel->call('config:cache');
-    $kernel->call('route:cache');
-    $kernel->call('view:cache');
-    $kernel->call('queue:restart');
-    $steps['optimize'] = 'ok';
+    // Opsional: seed admin saat tabel users masih kosong.
+    try {
+        if ($app->make('db')->table('users')->count() === 0) {
+            $kernel->call('db:seed', ['--class' => 'Database\Seeders\UserSeeder', '--force' => true]);
+            $steps['seed'] = 'admin default dibuat';
+        } else {
+            $steps['seed'] = 'skip (users sudah ada)';
+        }
+    } catch (\Throwable $e) {
+        $warnings[] = 'seed: ' . $e->getMessage();
+    }
+
+    // Opsional: optimize & cache. Tidak menggagalkan deploy bila host membatasinya.
+    // route:cache dan view:cache sengaja dilewati (berat & bisa membuat PHP dibunuh host).
+    foreach (['optimize:clear', 'config:cache', 'queue:restart'] as $cmd) {
+        try {
+            $kernel->call($cmd);
+            $steps[$cmd] = 'ok';
+        } catch (\Throwable $e) {
+            $warnings[] = $cmd . ': ' . $e->getMessage();
+        }
+    }
+
+    deployLog('Deploy selesai: ' . json_encode(['steps' => $steps, 'warnings' => $warnings], JSON_UNESCAPED_SLASHES));
 } catch (\Throwable $e) {
     try {
         $kernel->terminate();
@@ -217,11 +235,10 @@ try {
 $kernel->terminate();
 $app->terminate();
 
-deployLog('Deploy selesai: ' . json_encode($steps, JSON_UNESCAPED_SLASHES));
-
 echo json_encode([
     'ok' => true,
     'steps' => $steps,
+    'warnings' => $warnings,
     'db' => [
         'driver' => config('database.default'),
         'name' => $app->make('db')->connection()->getDatabaseName(),
