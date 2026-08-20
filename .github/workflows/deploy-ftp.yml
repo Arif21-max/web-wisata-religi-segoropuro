@@ -90,9 +90,9 @@ jobs:
           rm -rf deploy-public
           mkdir -p deploy-public
           cp -r public/. deploy-public/
-          APP_DIR=$(echo "${{ secrets.FTP_SERVER_DIR }}" | tr -d '/')
-          sed -i "s|__DIR__.'/../vendor/autoload.php'|__DIR__.'/${APP_DIR}/vendor/autoload.php'|" deploy-public/index.php
-          sed -i "s|__DIR__.'/../bootstrap/app.php'|__DIR__.'/${APP_DIR}/bootstrap/app.php'|" deploy-public/index.php
+          APP_DIR=$(basename "${{ secrets.FTP_SERVER_DIR }}")
+          sed -i "s|__DIR__.'/../vendor/autoload.php'|__DIR__.'/../${APP_DIR}/vendor/autoload.php'|" deploy-public/index.php
+          sed -i "s|__DIR__.'/../bootstrap/app.php'|__DIR__.'/../${APP_DIR}/bootstrap/app.php'|" deploy-public/index.php
 
       - name: Deploy isi public ke docroot (public_html)
         uses: SamKirkland/FTP-Deploy-Action@v4.4.0
