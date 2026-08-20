@@ -1,0 +1,86 @@
+name: Deploy (FTP + Hook)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ftp-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build, Zip & Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo, pdo_mysql, pdo_sqlite, sqlite3, fileinfo, zip, gd
+          coverage: none
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      - name: Install dependency produksi (composer)
+        run: composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependency frontend (npm ci)
+        run: npm ci
+
+      - name: Build aset (Vite)
+        run: npm run build
+
+      - name: Bungkus aplikasi ke deploy.zip
+        run: |
+          rm -f deploy.zip
+          zip -qr deploy.zip . \
+            -x ".git/*" \
+               "node_modules/*" \
+               ".env" \
+               ".env.*" \
+               "storage/*" \
+               "database/*.sqlite*" \
+               "ftp-upload/*" \
+               ".github/*" \
+               "public/deploy-hook.php" \
+               "deploy.zip"
+
+      - name: Siapkan folder ftp-upload (zip + hook)
+        run: |
+          rm -rf ftp-upload
+          mkdir -p ftp-upload
+          cp deploy.zip ftp-upload/
+          cp public/deploy-hook.php ftp-upload/
+
+      - name: Upload 2 file via FTP ke public_html
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: ${{ secrets.FTP_PORT }}
+          protocol: ftp
+          local-dir: ftp-upload/
+          server-dir: /public_html/
+          dangerous-clean-slate: false
+
+      - name: Jalankan deploy hook di server
+        continue-on-error: true
+        run: curl -fsS -m 300 "https://sayyidarifsegoropuro.com/deploy-hook.php?token=${{ secrets.DEPLOY_TOKEN }}"

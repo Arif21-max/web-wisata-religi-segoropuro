@@ -1,0 +1,16 @@
+RewriteEngine On
+
+# Blokir akses langsung ke file sensitif / artefak deploy
+RewriteRule ^\.env - [F,L]
+RewriteRule ^deploy\.zip$ - [F,L]
+
+# Hook deploy tetap bisa dipanggil langsung
+RewriteRule ^deploy-hook\.php$ - [L]
+
+# File/folder yang benar-benar ada dilewati
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Semua request lain diteruskan ke folder public/
+RewriteRule ^(.*)$ public/$1 [L]
