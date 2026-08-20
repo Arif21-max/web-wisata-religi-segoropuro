@@ -74,6 +74,7 @@ jobs:
             **/node_modules/**
             **/.env
             **/.env.*
+            **/vendor/**
             public/**
             deploy-public/**
             storage/framework/**
