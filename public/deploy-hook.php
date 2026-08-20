@@ -158,17 +158,33 @@ if (function_exists('opcache_reset')) {
 }
 
 // 5) Boot kernel console Laravel dan jalankan perintah artisan.
-require $root . '/vendor/autoload.php';
+// Semua error (termasuk saat boot kernel) ditangkap dan dikembalikan sebagai JSON.
+register_shutdown_function(function () use ($root): void {
+    $error = error_get_last();
 
-$app = require $root . '/bootstrap/app.php';
+    if ($error !== null && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        $msg = 'PHP fatal: ' . $error['message'] . ' @ ' . $error['file'] . ':' . $error['line'];
+        deployLog('ERROR: ' . $msg);
+        http_response_code(500);
+        echo json_encode(['ok' => false, 'error' => $msg], JSON_UNESCAPED_SLASHES);
+    }
+});
 
-/** @var \Illuminate\Contracts\Console\Kernel $kernel */
-$kernel = $app->make(\Illuminate\Contracts\Console\Kernel::class);
-$kernel->bootstrap();
-
-$steps = [];
+set_error_handler(static function (int $severity, string $message, string $file, int $line): bool {
+    throw new ErrorException($message, 0, $severity, $file, $line);
+});
 
 try {
+    require $root . '/vendor/autoload.php';
+
+    $app = require $root . '/bootstrap/app.php';
+
+    /** @var \Illuminate\Contracts\Console\Kernel $kernel */
+    $kernel = $app->make(\Illuminate\Contracts\Console\Kernel::class);
+    $kernel->bootstrap();
+
+    $steps = [];
+
     $kernel->call('migrate', ['--force' => true]);
     $steps['migrate'] = 'ok';
 
@@ -191,8 +207,11 @@ try {
     $kernel->call('queue:restart');
     $steps['optimize'] = 'ok';
 } catch (\Throwable $e) {
-    $kernel->terminate();
-    hookFail('Artisan error: ' . $e->getMessage());
+    try {
+        $kernel->terminate();
+    } catch (\Throwable) {
+    }
+    hookFail('Artisan error: ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
 }
 
 $kernel->terminate();
