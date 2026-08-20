@@ -57,7 +57,7 @@ jobs:
           npm ci
           npm run build
 
-      - name: Deploy via FTP ke hosting
+      - name: Deploy aplikasi ke folder web-religi
         uses: SamKirkland/FTP-Deploy-Action@v4.4.0
         with:
           server: ${{ secrets.FTP_HOST }}
@@ -74,6 +74,8 @@ jobs:
             **/node_modules/**
             **/.env
             **/.env.*
+            public/**
+            deploy-public/**
             storage/framework/**
             storage/logs/**
             storage/app/public/uploads/**
@@ -81,3 +83,27 @@ jobs:
             database/*.sqlite
             database/*.sqlite-journal
             .ftp-deploy-sync-state.json
+
+      - name: Siapkan isi folder public untuk docroot
+        run: |
+          rm -rf deploy-public
+          mkdir -p deploy-public
+          cp -r public/. deploy-public/
+          APP_DIR=$(echo "${{ secrets.FTP_SERVER_DIR }}" | tr -d '/')
+          sed -i "s|__DIR__.'/../vendor/autoload.php'|__DIR__.'/${APP_DIR}/vendor/autoload.php'|" deploy-public/index.php
+          sed -i "s|__DIR__.'/../bootstrap/app.php'|__DIR__.'/${APP_DIR}/bootstrap/app.php'|" deploy-public/index.php
+
+      - name: Deploy isi public ke docroot (public_html)
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: ${{ secrets.FTP_PORT }}
+          protocol: ${{ secrets.FTP_PROTOCOL }}
+          local-dir: deploy-public/
+          server-dir: /${{ secrets.FTP_DOCROOT }}/
+          dangerous-clean-slate: true
+          exclude: |
+            storage
+            .user.ini
