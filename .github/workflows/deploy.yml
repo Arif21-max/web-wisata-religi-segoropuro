@@ -82,5 +82,22 @@ jobs:
           dangerous-clean-slate: false
 
       - name: Jalankan deploy hook di server
-        continue-on-error: true
-        run: curl -fsS -m 300 "https://sayyidarifsegoropuro.com/deploy-hook.php?token=${{ secrets.DEPLOY_TOKEN }}"
+        run: |
+          RESPONSE=$(curl -fsS -m 300 "https://sayyidarifsegoropuro.com/deploy-hook.php?token=${{ secrets.DEPLOY_TOKEN }}") || {
+            echo "::error::Deploy hook gagal dipanggil (HTTP error). Cek DEPLOY_HOOK_TOKEN di .env server & log storage/logs/deploy.log."
+            exit 1
+          }
+          echo "$RESPONSE"
+          if ! echo "$RESPONSE" | grep -q '"ok":true'; then
+            echo "::error::Deploy hook mengembalikan error: $RESPONSE"
+            exit 1
+          fi
+
+      - name: Verifikasi deploy.zip sudah terhapus dari server
+        run: |
+          CODE=$(curl -s -o /dev/null -w "%{http_code}" "https://sayyidarifsegoropuro.com/deploy.zip")
+          echo "HTTP code untuk /deploy.zip: $CODE"
+          if [ "$CODE" = "200" ]; then
+            echo "::error::deploy.zip masih ada di server - ekstrak kemungkinan gagal."
+            exit 1
+          fi

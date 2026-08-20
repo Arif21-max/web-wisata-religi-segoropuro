@@ -16,6 +16,8 @@ class KontakSeeder extends Seeder
             'whatsapp_number' => config('segoropuro.whatsapp_number'),
             'whatsapp_default_message' => config('segoropuro.whatsapp_default_message'),
             'google_maps_embed' => sanitize_maps_embed(config('segoropuro.google_maps_embed')),
+            'gambar_hero' => null,
+            'gambar_sejarah' => null,
         ]);
     }
 }

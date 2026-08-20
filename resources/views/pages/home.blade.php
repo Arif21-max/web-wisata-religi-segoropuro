@@ -5,7 +5,7 @@
 @section('description', 'Wisata religi Makam Sayyid Arif Segoropuro di Desa Segoropuro, Rejoso, Pasuruan. Info ziarah, sejarah, spot wisata, lokasi, dan agenda kegiatan tersedia di portal resmi ini.')
 
 @push('head')
-    <link rel="preload" as="image" href="{{ media_url('uploads/hero.jpg') }}?v=2">
+    <link rel="preload" as="image" href="{{ media_url(kontak()?->gambar_hero ?: 'uploads/hero.jpg') }}?v=2">
 @endpush
 
 @section('jsonld')
@@ -26,7 +26,7 @@
                 "@id": "{{ url('/') }}#attraction",
                 "name": "{{ config('segoropuro.seo.site_name') }}",
                 "url": "{{ url('/') }}",
-                "image": "{{ media_url('uploads/hero.jpg') }}",
+                "image": "{{ media_url(kontak()?->gambar_hero ?: 'uploads/hero.jpg') }}",
                 "description": "Makam Sayyid Arif Segoropuro, wisata religi dan ziarah di Desa Segoropuro, Kecamatan Rejoso, Kabupaten Pasuruan, Jawa Timur.",
                 "address": {
                     "@type": "PostalAddress",
@@ -52,7 +52,7 @@
 @section('content')
     {{-- Hero --}}
     <section class="relative flex min-h-[88vh] items-center justify-center overflow-hidden">
-        <img src="{{ media_url('uploads/hero.jpg') }}?v=2" alt="Kawasan Wisata Religi Makam Sayyid Arif Segoropuro, Pasuruan" class="animate-slow-zoom absolute inset-0 h-full w-full object-cover" loading="eager" fetchpriority="high" decoding="async">
+        <img src="{{ media_url(kontak()?->gambar_hero ?: 'uploads/hero.jpg') }}?v=2" alt="Kawasan Wisata Religi Makam Sayyid Arif Segoropuro, Pasuruan" class="animate-slow-zoom absolute inset-0 h-full w-full object-cover" loading="eager" fetchpriority="high" decoding="async">
         <div class="absolute inset-0 bg-gradient-to-b from-brand-950/85 via-brand-950/60 to-brand-950/85"></div>
 
         {{-- Ornamen cahaya melayang --}}
@@ -113,7 +113,7 @@
             </div>
             <div data-reveal="right" class="relative">
                 <div class="absolute -inset-4 -z-10 rounded-3xl bg-gradient-to-br from-brand-100 to-gold-400/30"></div>
-                <img src="{{ media_url('uploads/sejarah.jpg') }}" alt="Sejarah Sayyid Arif Segoropuro" class="h-[420px] w-full rounded-3xl object-cover shadow-2xl">
+                <img src="{{ media_url(kontak()?->gambar_sejarah ?: 'uploads/sejarah.jpg') }}" alt="Sejarah Sayyid Arif Segoropuro" class="h-[420px] w-full rounded-3xl object-cover shadow-2xl">
             </div>
         </div>
     </section>

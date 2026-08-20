@@ -8,7 +8,7 @@
             <p class="text-sm text-stone-500">Kelola informasi kontak yang tampil di situs (footer, tombol WhatsApp, dan peta lokasi).</p>
         </div>
 
-        <form action="{{ route('admin.kontak.update') }}" method="POST" class="space-y-6">
+        <form action="{{ route('admin.kontak.update') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
             @csrf
             @method('PUT')
 
@@ -44,6 +44,33 @@
                         <textarea id="google_maps_embed" name="google_maps_embed" rows="4" placeholder="&lt;iframe src=&quot;https://www.google.com/maps/embed?pb=...&quot; ...&gt;&lt;/iframe&gt;" class="input-field">{{ old('google_maps_embed', $kontak->google_maps_embed ?? '') }}</textarea>
                         <p class="mt-1 text-xs text-stone-400">Tempel kode embed iframe dari Google Maps. Kosongkan untuk menyembunyikan peta.</p>
                     </div>
+                </div>
+            </div>
+
+            <div class="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+                <h2 class="mb-1 font-bold text-stone-900">Gambar Halaman Depan</h2>
+                <p class="mb-5 text-sm text-stone-500">Unggah gambar yang tampil di halaman depan (home). Kosongkan jika tidak ingin mengubah gambar saat ini.</p>
+
+                <div class="grid gap-6 md:grid-cols-2">
+                    @foreach ([
+                        ['field' => 'gambar_hero', 'label' => 'Gambar Hero (Background Utama)', 'desc' => 'Latar hero di halaman depan. Disarankan resolusi lebar (mis. 1920×1080).'],
+                        ['field' => 'gambar_sejarah', 'label' => 'Gambar Sejarah Singkat', 'desc' => 'Gambar di section Sejarah Singkat. Disarankan rasio 4:3.'],
+                    ] as $img)
+                        @php $val = $kontak->{$img['field']} ?? null; @endphp
+                        <div>
+                            <label for="{{ $img['field'] }}" class="mb-1.5 block text-sm font-semibold text-stone-700">{{ $img['label'] }}</label>
+                            @if ($val)
+                                <img src="{{ media_url($val) }}" alt="{{ $img['label'] }}" class="mb-2 h-40 w-full rounded-lg border border-stone-200 bg-stone-100 object-cover">
+                            @endif
+                            <input type="file" id="{{ $img['field'] }}" name="{{ $img['field'] }}" accept="image/*"
+                                class="block w-full text-sm text-stone-600 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-brand-700 hover:file:bg-brand-100">
+                            <label class="mt-2 inline-flex cursor-pointer items-center gap-2 text-sm text-red-600">
+                                <input type="checkbox" name="hapus_{{ $img['field'] }}" value="1" class="rounded border-stone-300 text-red-600 focus:ring-red-500">
+                                Hapus gambar ini
+                            </label>
+                            <p class="mt-1 text-xs text-stone-400">{{ $img['desc'] }}</p>
+                        </div>
+                    @endforeach
                 </div>
             </div>
 

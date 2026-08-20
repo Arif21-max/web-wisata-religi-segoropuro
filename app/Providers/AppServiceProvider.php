@@ -27,9 +27,11 @@ class AppServiceProvider extends ServiceProvider
             return;
         }
 
-        $this->ensureEnvConfigured();
-        $this->ensureAppKeyExists();
-        $this->ensureDatabaseExists();
+        if (App::environment('local')) {
+            $this->ensureEnvConfigured();
+            $this->ensureAppKeyExists();
+            $this->ensureDatabaseExists();
+        }
     }
 
     /**

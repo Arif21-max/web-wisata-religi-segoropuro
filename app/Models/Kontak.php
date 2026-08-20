@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 
-#[Fillable(['alamat', 'whatsapp_number', 'whatsapp_default_message', 'google_maps_embed'])]
+#[Fillable(['alamat', 'whatsapp_number', 'whatsapp_default_message', 'google_maps_embed', 'gambar_hero', 'gambar_sejarah'])]
 class Kontak extends Model
 {
     protected $table = 'kontak';
